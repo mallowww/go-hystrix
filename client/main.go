@@ -30,6 +30,7 @@ func init() {
 }
 
 func api(c echo.Context) error {
+	output := make(chan string, 1)
 	hystrix.Go("api", func() error {
 
 		res, err := http.Get("http://localhost:8000/api")
@@ -46,11 +47,14 @@ func api(c echo.Context) error {
 		msg := string(data)
 		fmt.Println(msg)
 
+		output <- msg
+
 		return nil
 	}, func(err error) error {
 		fmt.Println(err)
 		return nil
 	})
+	out := <-output
 
-	return nil
+	return c.String(http.StatusOK, out)
 }
